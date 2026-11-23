@@ -32,5 +32,13 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET" || !event.request.url.startsWith(self.registration.scope)) return;
+  // Pages come from the network first so a new release shows on the next visit;
+  // the cached copy is the fallback when offline. Built files have hashed names, so cache first.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(async () => (await caches.match(event.request, { ignoreSearch: true })) ?? caches.match("./")),
+    );
+    return;
+  }
   event.respondWith(caches.match(event.request, { ignoreSearch: true }).then((hit) => hit ?? fetch(event.request)));
 });
